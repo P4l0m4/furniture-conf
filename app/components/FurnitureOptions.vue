@@ -43,7 +43,7 @@ defineProps<{
   @media (min-width: 768px) {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    top: 4rem;
+    top: 6rem;
     right: 4rem;
     bottom: initial;
     left: initial;

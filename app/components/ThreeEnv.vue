@@ -19,6 +19,7 @@ import {
   LineLoop,
   BufferGeometry,
   Float32BufferAttribute,
+  Quaternion,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GridHelper } from "three";
@@ -45,6 +46,11 @@ let dragPlane;
 let dragPoint;
 let dragOffset;
 
+const ROT_STEP = Math.PI / 4; // 45°
+const _prevQuat = new Quaternion();
+
+const uiColor = ref<string>("#c084fc");
+
 const PLANE_W = 60;
 const PLANE_H = 60;
 const HALF_W = PLANE_W / 2;
@@ -54,6 +60,64 @@ const _box = new Box3();
 const _newBox = new Box3();
 const _target = new Vector3();
 const _delta = new Vector3();
+
+const colorInput = ref<HTMLInputElement | null>(null);
+
+function keepInsideOrRevert(obj: any, revert: () => void) {
+  _box.setFromObject(obj);
+  if (
+    _box.min.x < -HALF_W ||
+    _box.max.x > HALF_W ||
+    _box.min.y < -HALF_H ||
+    _box.max.y > HALF_H
+  ) {
+    revert();
+    return false;
+  }
+  return true;
+}
+
+function rotateSelected(sign: 1 | -1) {
+  if (!selected.value) return;
+  const o = selected.value;
+
+  // sauvegarde pour revert
+  _prevQuat.copy(o.quaternion);
+
+  o.rotateY(sign * ROT_STEP);
+
+  // annule si hors plateau
+  keepInsideOrRevert(o, () => o.quaternion.copy(_prevQuat));
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  // ignore si on tape dans un input/textarea/contenteditable
+  const t = e.target as HTMLElement | null;
+  if (
+    t &&
+    (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
+  )
+    return;
+
+  switch (e.code) {
+    case "ArrowLeft":
+      e.preventDefault();
+      rotateSelected(1);
+      break;
+    case "ArrowRight":
+      e.preventDefault();
+      rotateSelected(-1);
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      rotateSelected(1); // même sens que gauche
+      break;
+    case "ArrowDown":
+      e.preventDefault();
+      rotateSelected(-1);
+      break;
+  }
+}
 
 function addGridOutline(size: number) {
   const half = size / 2;
@@ -125,6 +189,43 @@ function restoreColor(obj: any) {
       });
     }
   });
+}
+
+function setSelectedColorHex(hexInt: number) {
+  if (!selected.value) return;
+
+  selected.value.traverse((o: any) => {
+    if (o.isMesh && o.material) {
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m: MeshStandardMaterial) => {
+        if (!m.color) return;
+        if (!m.userData) m.userData = {};
+        // enregistre la nouvelle couleur comme base
+        m.userData.baseColor = hexInt;
+        // garde le surlignage tant que l'élément est sélectionné
+        m.color.setHex(0x3b82f6);
+      });
+    }
+  });
+}
+
+function onColorInput(hexStr: string) {
+  // "#rrggbb" -> int
+  const value = parseInt(hexStr.replace("#", ""), 16);
+  if (Number.isFinite(value)) setSelectedColorHex(value);
+}
+
+function openColorPicker() {
+  const el = colorInput.value;
+  if (!el) return;
+  // Chrome/Edge
+  if ("showPicker" in el) {
+    // @ts-ignore
+    el.showPicker();
+  } else {
+    // Safari/Firefox
+    el.click();
+  }
 }
 
 function onPointerDown(e: PointerEvent, pointer: Vector2) {
@@ -265,6 +366,8 @@ function init() {
   );
   renderer.domElement.style.cursor = "pointer";
 
+  window.addEventListener("keydown", onKeyDown);
+
   scene = new Scene();
 
   // Camera
@@ -330,11 +433,9 @@ function init() {
 
   resize();
 
-  // Resize handling
   resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(container.value);
 
-  // Loop
   animate();
 }
 
@@ -397,6 +498,7 @@ onUnmounted(() => {
   renderer?.domElement?.removeEventListener("pointerleave", (e) =>
     onPointerUp(e, pointer)
   );
+  window.removeEventListener("keydown", onKeyDown);
 });
 </script>
 
@@ -405,13 +507,24 @@ onUnmounted(() => {
     <div ref="container" class="three-container"></div>
     <div v-if="loading" class="loading">Chargement…</div>
     <template v-else>
-      <button
-        v-if="isObject(selected)"
-        class="remove-button"
-        @click="removeObject(selected)"
-      >
-        <IconComponent icon="trash_fill" />
-      </button>
+      <div v-if="isObject(selected)" class="buttons">
+        <button class="remove-button" @click="removeObject(selected)">
+          <IconComponent icon="trash_fill" />
+        </button>
+        <button class="color-button" @click="openColorPicker">
+          <IconComponent icon="swatches_fill" />
+        </button>
+
+        <input
+          ref="colorInput"
+          type="color"
+          style="display: none"
+          v-model="uiColor"
+          @input="onColorInput(($event.target as HTMLInputElement).value)"
+          aria-label="Couleur du meuble"
+          tabindex="-1"
+        />
+      </div>
 
       <FurnitureOptions
         :furnitureCatalog="furnitureCatalog"
@@ -445,15 +558,20 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-.remove-button {
+.buttons {
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  right: 4rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.remove-button {
   background: #ef4444;
   border: none;
   border-radius: 50%;
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -464,6 +582,25 @@ onUnmounted(() => {
 
   &:hover {
     background: #dc2626;
+  }
+}
+
+.color-button {
+  background: var(--accent-color);
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1;
+  transition: background-color 0.2s linear;
+
+  &:hover {
+    background: rgb(0, 118, 229);
   }
 }
 </style>
