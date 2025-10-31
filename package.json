@@ -1,0 +1,27 @@
+{
+  "name": "furniture-conf",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@types/three": "^0.180.0",
+    "@vueuse/core": "^13.9.0",
+    "nuxt": "^4.2.0",
+    "three": "^0.180.0",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^7.0.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.1"
+  }
+}

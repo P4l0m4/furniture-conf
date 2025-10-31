@@ -1,0 +1,170 @@
+:root {
+  /* BREAKPOINTS */
+  --tablet-screen: 475px;
+  --big-tablet-screen: 768px;
+  --laptop-screen: 1024px;
+  --desktop-screen: 1440px;
+  --super-big-screen: 2400px;
+
+  /* COLORS */
+  --base-color: #f7f7f7;
+  --primary-color: #fffdfa;
+  --secondary-color: #00065c;
+  --accent-color: #3185ff;
+  --text-color: #22262e;
+  --text-color-alt: var(--primary-color);
+  --error-color: #cb0000;
+  --warning-color: #f0ae00;
+  --success-color: #48d664;
+  --gold-color: #ffe492;
+  --pink-color: #ff91af;
+  --blue-color: #8082ab;
+  --purple-color: #9035ff;
+
+  --text-color-faded: #22262e60;
+  --text-color-super-faded: #22262e10;
+  --primary-color-faded: #fffdfa50;
+  --secondary-color-faded: #00065c30;
+  --accent-color-faded: #3185ff30;
+  --error-color-faded: #cb000020;
+  --success-color-faded: #48d66430;
+  --warning-color-faded: #f0ae0030;
+  --loading-color-faded: #f0ae0030;
+  --pink-color-faded: #ff91af60;
+  --blue-color-faded: #8082ab60;
+  --purple-color-faded: #9035ff30;
+  --border-color-faded: #22262e0f;
+  --transparent-light: #fffdfa1a;
+  --transparent-dark: #22262e1a;
+
+  /* BORDERS */
+  --radius: 1rem;
+
+  /* SHADOWS */
+  --shadow-black: 0px 0px 10px rgba(0, 0, 0, 0.02);
+  --shadow-primary: 0px 0px 10px rgba(var(--primary-color), 0.05);
+  --shadow-secondary: 0px 0px 10px rgba(var(--secondary-color), 0.05);
+  --shadow-text: 0px 0px 2px var(--text-color);
+  --shadow-text-secondary: 0px 0px 2px var(--secondary-color);
+  --shadow-success: 0px 0px 10px rgba(var(--success-color), 0.05);
+  --shadow-error: 0px 0px 10px rgba(var(--error-color), 0.05);
+  --shadow-loading: 0px 0px 10px rgba(var(--loading-color), 0.05);
+
+  /* TYPO */
+  --regular: 400;
+  --medium: 500;
+  --semi-bold: 600;
+  --bold: 700;
+  --extra-bold: 800;
+
+  /* FONT SIZES */
+  --titles: 2rem;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url(@/assets/fonts/Figtree.ttf) format("truetype");
+  font-display: block; /* Évite les problèmes d'hydratation */
+}
+
+*,
+:before,
+:after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow: hidden; /* Pas de scroll pour l'expérience immersive */
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  background-color: var(--base-color);
+  color: var(--text-color);
+  font-family: "Figtree", system-ui, sans-serif; /* Fallback system font */
+  font-synthesis: none;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+  font-weight: var(--regular);
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+#__nuxt {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* optimizations canvas */
+canvas {
+  display: block;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* SCROLLBAR */
+/* width */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--text-color-super-faded);
+  border-radius: 20px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--text-color-faded);
+  border-radius: var(--radius);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-faded);
+}
+
+.not-selectable {
+  -moz-user-select: none; /* Firefox */
+  -webkit-user-select: none; /* Chrome, Safari, Opéra depuis la version 15 */
+  -ms-user-select: none; /* Internet explorer depuis la version 10 et Edge */
+  user-select: none; /* Propriété standard */
+}
+
+.sr-only {
+  border: 0 !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  -webkit-clip-path: inset(50%) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+  white-space: nowrap !important;
+}
+
+.titles {
+  font-size: var(--titles);
+  font-weight: var(--bold);
+  line-height: 1.2;
+}
