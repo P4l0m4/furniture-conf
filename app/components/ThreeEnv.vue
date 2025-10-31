@@ -430,7 +430,7 @@ function init() {
   controls.update();
 
   // Lights
-  const hemi = new HemisphereLight(0xfffdfa, 0x222233, 0.4);
+  const hemi = new HemisphereLight(0xfffdfa, 0x222233, 1);
 
   scene.add(hemi);
 

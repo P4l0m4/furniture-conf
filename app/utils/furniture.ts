@@ -230,7 +230,7 @@ export function makeLamp() {
   g.add(bulb);
 
   // lumière
-  const light = new PointLight(0xfffdfa, 40, 60);
+  const light = new PointLight(0xfffdfa, 40, 70);
   light.position.set(0, bulbY - 0.3, 0);
   light.castShadow = true;
   light.shadow.mapSize.set(1024, 1024);
