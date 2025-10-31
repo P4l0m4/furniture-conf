@@ -20,6 +20,8 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   Quaternion,
+  LineSegments,
+  EdgesGeometry,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GridHelper } from "three";
@@ -163,49 +165,82 @@ function createFurniture(func: Function) {
   scene.add(furniture);
 }
 
-function colorize(obj: any, hex: number) {
-  obj.traverse((o: any) => {
-    if (o.isMesh && o.material) {
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      mats.forEach((m: MeshStandardMaterial) => {
-        if (!m.userData) m.userData = {};
-        if (m.color && m.userData.baseColor === undefined) {
-          m.userData.baseColor = m.color.getHex();
-        }
-        if (m.color) m.color.setHex(hex);
-      });
-    }
+// function colorize(obj: any, hex: number) {
+//   obj.traverse((o: any) => {
+//     if (o.isMesh && o.material) {
+//       const mats = Array.isArray(o.material) ? o.material : [o.material];
+//       mats.forEach((m: MeshStandardMaterial) => {
+//         if (!m.userData) m.userData = {};
+//         if (m.color && m.userData.baseColor === undefined) {
+//           m.userData.baseColor = m.color.getHex();
+//         }
+//         if (m.color) m.color.setHex(hex);
+//       });
+//     }
+//   });
+// }
+
+// function restoreColor(obj: any) {
+//   obj.traverse((o: any) => {
+//     if (o.isMesh && o.material) {
+//       const mats = Array.isArray(o.material) ? o.material : [o.material];
+//       mats.forEach((m: MeshStandardMaterial) => {
+//         if (m.color && m.userData?.baseColor !== undefined) {
+//           m.color.setHex(m.userData.baseColor);
+//         }
+//       });
+//     }
+//   });
+// }
+
+function addOutline(root: any, color = 0x3b82f6) {
+  // évite doublons
+  if (root.userData.__outline) return;
+
+  const group = new Mesh(); // simple conteneur
+  group.name = "__outlineGroup";
+
+  root.traverse((o: any) => {
+    if (!o.isMesh || !o.geometry) return;
+    const eg = new EdgesGeometry(o.geometry, 1); // seuil angle par défaut
+    const mat = new LineBasicMaterial({ color, depthTest: true });
+    const lines = new LineSegments(eg, mat);
+    lines.matrixAutoUpdate = false;
+    lines.applyMatrix4(
+      o.matrixWorld.clone().multiply(root.matrixWorld.clone().invert())
+    );
+    // ^ place les arêtes dans l’espace du root
+    group.add(lines);
   });
+
+  root.add(group);
+  root.userData.__outline = group;
 }
 
-function restoreColor(obj: any) {
-  obj.traverse((o: any) => {
-    if (o.isMesh && o.material) {
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      mats.forEach((m: MeshStandardMaterial) => {
-        if (m.color && m.userData?.baseColor !== undefined) {
-          m.color.setHex(m.userData.baseColor);
-        }
-      });
+function removeOutline(root: any) {
+  const group: any = root?.userData?.__outline;
+  if (!group) return;
+  group.traverse((c: any) => {
+    if (c.isLineSegments) {
+      c.geometry?.dispose?.();
+      c.material?.dispose?.();
     }
   });
+  root.remove(group);
+  delete root.userData.__outline;
 }
 
 function setSelectedColorHex(hexInt: number) {
   if (!selected.value) return;
-
   selected.value.traverse((o: any) => {
-    if (o.isMesh && o.material) {
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      mats.forEach((m: MeshStandardMaterial) => {
-        if (!m.color) return;
-        if (!m.userData) m.userData = {};
-        // enregistre la nouvelle couleur comme base
-        m.userData.baseColor = hexInt;
-        // garde le surlignage tant que l'élément est sélectionné
-        m.color.setHex(0x3b82f6);
-      });
-    }
+    if (!o.isMesh || !o.material) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((m: MeshStandardMaterial) => {
+      if (!m.color) return;
+      if (!m.userData) m.userData = {};
+      m.userData.baseColor = hexInt;
+      m.color.setHex(hexInt);
+    });
   });
 }
 
@@ -258,9 +293,9 @@ function onPointerDown(e: PointerEvent, pointer: Vector2) {
   let root: any = hit.object;
   while (root.parent && !root.userData?.isFurniture) root = root.parent;
 
-  if (selected.value && selected.value !== root) restoreColor(selected.value);
+  if (selected.value && selected.value !== root) removeOutline(selected.value);
   selected.value = root;
-  colorize(root, 0x3b82f6);
+  addOutline(root, 0x3b82f6);
 
   // drag dans le plan z du meuble
   dragPlane.set(new Vector3(0, 0, 1), -selected.value.position.z);
